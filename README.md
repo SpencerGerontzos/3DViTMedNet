@@ -53,6 +53,10 @@ This repository supports various 3D medical image datasets. You can adapt the co
 ### Results:
 The experiments conducted with **3DViTMedNet** have shown state-of-the-art performance on multiple 3D medical image classification tasks, demonstrating the effectiveness of the hybrid architecture in preserving both local and global features within the data.
 
+## Acknowledgements
+
+This training framework was developed based on the code and experiments from the [MedMNIST repository](https://github.com/MedMNIST/experiments/tree/main). Special thanks to the MedMNIST team for making their work available.
+
 ### Citation:
 If you use **3DViTMedNet** in your research, please cite the following paper:
 ```plaintext
