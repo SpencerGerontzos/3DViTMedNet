@@ -12,6 +12,7 @@
 - **Modular Design**: The architecture is highly modular, allowing for easy modifications and experimentation with different components.
 
 ### Repository Contents:
+- **`literature/`**: Contains both thesis and conference submissions.
 - **`models/`**: Contains the implementation of the 3DViTMedNet model, including the 3D CNN feature extractor, slice extraction, Vision Transformer, and the final classification head.
 - **`data/`**: Includes scripts for data preprocessing, augmentation, and slicing of 3D medical datasets.
 - **`training/`**: Training scripts with support for GPU acceleration, model checkpoints, and logging.
