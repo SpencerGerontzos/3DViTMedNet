@@ -32,26 +32,39 @@
    pip install -r requirements.txt
    ```
 
-3. **Prepare Dataset**:
-   Download the relevant 3D medical dataset (e.g., MRI, CT) and follow the instructions in the `data/` folder to preprocess the data.
-
-4. **Train the Model**:
-   Train the model using the provided training scripts:
+3. **Train and Evaluate the Model**:
+   Run evaluations on test data to generate classification metrics:
    ```bash
-   python train.py --config configs/config.yaml
+   python train_and_eval_pytorch.py --model_path /path/to/best_model.pth --data_flag fracturemnist3d --num_epochs 100 --size 28 --gpu_ids 0 --model_flag 3DViTMedNet
    ```
 
-5. **Evaluate the Model**:
-   Run evaluations on test data to generate metrics and visualize results:
+4. **Generate Grad Cam ResNet Visualization**:
+   This will first train a resnet50 model and then follow up with a gradcam of the pretrained network to visualize the networks attention:
    ```bash
-   python evaluate.py --checkpoint checkpoints/best_model.pth
+   python train_and_eval_pytorch.py --model_path /path/to/best_model.pth --data_flag fracturemnist3d --num_epochs 100 --size 28 --gpu_ids 0 --model_flag resnet50 --gradcam y
+   ```
+
+5. **Generate Attention Map for 3DViTMedNet alongside original image slices**:
+   Run evaluations on test data to generate classification metrics:
+   ```bash
+   python train_and_eval_pytorch.py --model_path /path/to/best_model.pth --data_flag fracturemnist3d --num_epochs 0  --size 28 --gpu_ids 0 --model_flag 3DViTMedNet
+   ```
+
+6. **Generate original image slices**:
+   Run evaluations on test data to generate classification metrics:
+   ```bash
+   python train_and_eval_pytorch.py --data_flag fracturemnist3d --num_epochs -1 --size 28 --gpu_ids 0 --model_flag 3DViTMedNet
    ```
 
 ### Datasets:
-This repository supports various 3D medical image datasets. You can adapt the code to other datasets by adjusting the preprocessing and slicing methods in the `data/` folder.
+This repository supports various 3D medical image datasets. Please refer to the Acknowledgements for further details of the MedmNIST3D database.
 
 ### Results:
-The experiments conducted with **3DViTMedNet** have shown state-of-the-art performance on multiple 3D medical image classification tasks, demonstrating the effectiveness of the hybrid architecture in preserving both local and global features within the data.
+The experiments conducted with **3DViTMedNet** have shown excellent performance on multiple 3D medical image classification tasks, demonstrating the effectiveness of the hybrid architecture in preserving both local and global features within the data. Please refer to the \literature directory for further insight
+
+## Acknowledgements
+
+This training framework was developed based on the code and experiments from the [MedMNIST repository](https://github.com/MedMNIST/experiments/tree/main). Special thanks to the MedMNIST team for making their work available.
 
 ### Citation:
 If you use **3DViTMedNet** in your research, please cite the following paper:
