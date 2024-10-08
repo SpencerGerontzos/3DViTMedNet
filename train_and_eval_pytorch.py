@@ -52,6 +52,59 @@ from utils import Transform3D, model_to_syncbn
 #     plt.title(f'Attention map (Layer {layer_idx}, Head {head_idx}, Token {token_idx})')
 #     plt.show()
 
+import torch
+import numpy as np
+from torchvision.transforms import Compose
+
+class RandomFlip3D:
+    def __init__(self, axes=(0, 1, 2), p=0.5):
+        self.axes = axes
+        self.p = p
+
+    def __call__(self, sample):
+        image, label = sample
+        for axis in self.axes:
+            if np.random.rand() < self.p:
+                image = np.flip(image, axis=axis).copy()
+                # If labels need flipping, apply the same transformation
+                # label = np.flip(label, axis=axis).copy()
+        return image, label
+
+class RandomRotate3D:
+    def __init__(self, angles=(15, 15, 15)):
+        self.angles = angles  # Max rotation angles in degrees
+
+    def __call__(self, sample):
+        image, label = sample
+        angle_x = np.random.uniform(-self.angles[0], self.angles[0])
+        angle_y = np.random.uniform(-self.angles[1], self.angles[1])
+        angle_z = np.random.uniform(-self.angles[2], self.angles[2])
+        # Apply rotations around each axis
+        # You can use scipy.ndimage.rotate or implement custom rotation
+        return image, label
+
+class AddGaussianNoise3D:
+    def __init__(self, mean=0.0, std=0.01):
+        self.mean = mean
+        self.std = std
+
+    def __call__(self, sample):
+        image, label = sample
+        noise = np.random.normal(self.mean, self.std, image.shape)
+        image = image + noise
+        return image, label
+from torchvision.transforms import ToTensor
+
+train_transforms = Compose([
+    RandomFlip3D(axes=(0, 1, 2), p=0.5),
+    RandomRotate3D(angles=(15, 15, 15)),
+    AddGaussianNoise3D(mean=0.0, std=0.01),
+    ToTensor(),
+])
+
+
+
+
 def plot_attention_map(attention_map, title):
     """
     Plots the attention map for a specific layer, head, and token.
@@ -125,8 +178,67 @@ def extract_and_visualize_intra_plane_attention(attn_matrix, indices, plane_name
 
 
 def main(data_flag, output_root, num_epochs, gpu_ids, batch_size, size, conv, pretrained_3d, download, model_flag, as_rgb, shape_transform, model_path, gradcam, run):
-    is_resnet = False
+    
+    import torchio as tio
+    train_transform = tio.Compose([
+        # Random flips along acceptable axes
+        tio.RandomFlip(
+            axes=('LR',),         # Only if left-right flips are acceptable
+            flip_probability=0.5,
+        ),
 
+        # Random rotations with small angles
+        tio.RandomAffine(
+            scales=1.0,
+            degrees=(-10, 10),    # Rotate between -10 and +10 degrees
+            translation=0,
+            isotropic=True,
+        ),
+
+        # Random scaling
+        tio.RandomAffine(
+            scales=(0.95, 1.05),  # Scale between 95% and 105%
+            degrees=0,
+            translation=0,
+            isotropic=True,
+        ),
+
+        # Random translation
+        tio.RandomAffine(
+            scales=1.0,
+            degrees=0,
+            translation=(-5, 5),  # Translate up to ±5 mm
+            isotropic=True,
+        ),
+
+        # Adding Gaussian noise
+        tio.RandomNoise(
+            mean=0.0,
+            std=(0, 0.025),
+        ),
+
+        # Random gamma correction
+        tio.RandomGamma(
+            log_gamma=(-0.1, 0.1),
+        ),
+
+        # Random bias field
+        tio.RandomBiasField(
+            coefficients=0.5,
+        ),
+
+        # Elastic deformation
+        tio.RandomElasticDeformation(
+            num_control_points=7,
+            max_displacement=2.0,
+            locked_borders=2,
+        ),
+
+        # Z-Normalization
+        tio.ZNormalization(),
+    ])
+    
+    is_resnet = False
     lr = 0.001
     gamma=0.1
     milestones = [.25 * num_epochs ,0.5 * num_epochs, 0.75 * num_epochs]
@@ -155,10 +267,10 @@ def main(data_flag, output_root, num_epochs, gpu_ids, batch_size, size, conv, pr
 
     print('==> Preparing data...')
 
-    train_transform = Transform3D(mul='random') if shape_transform else Transform3D()
+    train_transform1 = Transform3D(mul='random') if shape_transform else Transform3D()
     eval_transform = Transform3D(mul='0.5') if shape_transform else Transform3D()
      
-    train_dataset = DataClass(split='train', transform=train_transform, download=download, as_rgb=as_rgb, size=size)
+    train_dataset = DataClass(split='train', transform=train_transform1, download=download, as_rgb=as_rgb, size=size)
     train_dataset_at_eval = DataClass(split='train', transform=eval_transform, download=download, as_rgb=as_rgb, size=size)
     val_dataset = DataClass(split='val', transform=eval_transform, download=download, as_rgb=as_rgb, size=size)
     test_dataset = DataClass(split='test', transform=eval_transform, download=download, as_rgb=as_rgb, size=size)
